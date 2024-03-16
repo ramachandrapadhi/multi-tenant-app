@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.learningtech.config.TenantContext;
+import com.learningtech.respmodel.ErrorResponse;
 import com.learningtech.util.HeaderMapRequestWrapper;
+import com.learningtech.util.JSONConveter;
 import com.learningtech.util.TanentId;
 
 import jakarta.servlet.Filter;
@@ -27,15 +29,17 @@ class TenantFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
+        resp.setContentType("application/json");
+		resp.setCharacterEncoding("UTF-8");
         String tenantName = req.getHeader("X-TenantID");
        
 		if (tenantName == null) {
-			String respStr = "{\r\n"
-					+ "  \"status\":false,\r\n"
-					+ "  \"statusCode\":400,\r\n"
-					+ "  \"message\": \"X-TenantID not present in header\"\r\n"
-					+ "}";
-			resp.getWriter().write(respStr);
+			ErrorResponse errorResponse = new ErrorResponse();
+			errorResponse.setStatus(Boolean.FALSE);
+			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			errorResponse.setMessage("X-TenantID not present in header");
+			
+			resp.getWriter().write(JSONConveter.objToJson(errorResponse));
 			resp.setStatus(HttpStatus.BAD_REQUEST.value());
 			return;
 		}
@@ -45,12 +49,12 @@ class TenantFilter implements Filter {
         	
         	Long tanentId = getTanentId(tenantName);
         	if(tanentId==null) {
-        		String respStr = "{\r\n"
-    					+ "  \"status\":false,\r\n"
-    					+ "  \"statusCode\":400,\r\n"
-    					+ "  \"message\": \"Invalid tenantID \"\r\n"
-    					+ "}";
-        		resp.getWriter().write(respStr);
+        		ErrorResponse errorResponse = new ErrorResponse();
+    			errorResponse.setStatus(Boolean.FALSE);
+    			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    			errorResponse.setMessage("Invalid tenant type");
+    			
+    			resp.getWriter().write(JSONConveter.objToJson(errorResponse));
     			resp.setStatus(HttpStatus.BAD_REQUEST.value());
     			return;
         	}
