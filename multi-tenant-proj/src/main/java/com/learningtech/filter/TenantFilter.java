@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.learningtech.config.TenantContext;
+import com.learningtech.respmodel.ErrorResponse;
+import com.learningtech.util.HeaderMapRequestWrapper;
+import com.learningtech.util.JSONConveter;
+import com.learningtech.util.TanentId;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -25,23 +29,54 @@ class TenantFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
+        resp.setContentType("application/json");
+		resp.setCharacterEncoding("UTF-8");
         String tenantName = req.getHeader("X-TenantID");
        
 		if (tenantName == null) {
-			String respStr = "{\r\n"
-					+ "  \"status\":false,\r\n"
-					+ "  \"statusCode\":400,\r\n"
-					+ "  \"message\": \"X-TenantID not present in header\"\r\n"
-					+ "}";
-			resp.getWriter().write(respStr);
+			ErrorResponse errorResponse = new ErrorResponse();
+			errorResponse.setStatus(Boolean.FALSE);
+			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			errorResponse.setMessage("X-TenantID not present in header");
+			
+			resp.getWriter().write(JSONConveter.objToJson(errorResponse));
 			resp.setStatus(HttpStatus.BAD_REQUEST.value());
 			return;
 		}
         TenantContext.setCurrentTenant(tenantName);
         try {
-            chain.doFilter(request, response);
+        	HeaderMapRequestWrapper requestWrapper = new HeaderMapRequestWrapper(req);
+        	
+        	Long tanentId = getTanentId(tenantName);
+        	if(tanentId==null) {
+        		ErrorResponse errorResponse = new ErrorResponse();
+    			errorResponse.setStatus(Boolean.FALSE);
+    			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+    			errorResponse.setMessage("Invalid tenant type");
+    			
+    			resp.getWriter().write(JSONConveter.objToJson(errorResponse));
+    			resp.setStatus(HttpStatus.BAD_REQUEST.value());
+    			return;
+        	}
+        	requestWrapper.addHeader("tenantId",String.valueOf(tanentId));
+            chain.doFilter(requestWrapper, response);
         } finally {
             TenantContext.setCurrentTenant("");
         }
     }
+    
+	private Long getTanentId(String typeOfTenent) {
+		typeOfTenent = typeOfTenent.toLowerCase();
+		switch (typeOfTenent) {
+		case "admin":
+			return TanentId.TANENT_TYPE_ADMIN.tId;
+		case "hr":
+			return TanentId.TANENT_TYPE_HR.tId;
+		case "finance":
+			return TanentId.TANENT_TYPE_FINANCE.tId;
+		case "technical":
+			return TanentId.TANENT_TYPE_TECHNICAL.tId;
+		}
+		return null;
+	}
 }

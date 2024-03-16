@@ -16,18 +16,15 @@ public class EmployeeService {
 	private EmployeeRepository repo;
 	
 	public Employee saveEmployee(String tenantId,Employee emp) {
-		int nenent_id = 0;
-		if(tenantId != null) {
-			nenent_id = tenantId.equals("tenant_1")? 1:2; 
-		}
-		emp.setTenantId(Long.valueOf(nenent_id));
+		emp.setTenantId(Long.valueOf(tenantId));
 		emp = repo.save(emp);
 		return emp;
 	}
 	
-	public Employee updateEmployee(Employee emp) {
+	public Employee updateEmployee(String tenantId,Employee emp) {
 		Employee employee =  getEmployee(emp.getId());
 		if(employee!=null) {
+			emp.setTenantId(Long.valueOf(tenantId));
 			emp = repo.save(emp);
 			return emp;
 		}

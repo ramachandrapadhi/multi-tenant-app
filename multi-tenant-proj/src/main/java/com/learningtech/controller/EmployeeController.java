@@ -29,14 +29,15 @@ public class EmployeeController {
 	}
 
 	@PostMapping("/save")
-	public ResponseEntity<Employee> createStudent(@RequestHeader("X-TenantID") String tenantId, @RequestBody Employee emp) {
+	public ResponseEntity<Employee> createStudent(@RequestHeader("tenantId") String tenantId, @RequestBody Employee emp) {
+		System.out.println(tenantId);
 		Employee resp = service.saveEmployee(tenantId,emp);
 		return new ResponseEntity<>(resp, HttpStatus.OK);
 	}
 	
 	@PostMapping("/update")
-	public ResponseEntity<Employee> updateStudent(@RequestBody Employee emp) {
-		Employee resp = service.updateEmployee(emp);
+	public ResponseEntity<Employee> updateStudent(@RequestHeader("tenantId") String tenantId,@RequestBody Employee emp) {
+		Employee resp = service.updateEmployee(tenantId,emp);
 		return new ResponseEntity<>(resp, HttpStatus.OK);
 	}
 	
